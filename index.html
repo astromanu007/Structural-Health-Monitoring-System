@@ -3,27 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MonitorX - AI Strain Monitoring</title>
+    <title>MonitorX - Strain Monitoring Dashboard</title>
+    
+    <!-- Chart.js for Graph -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Gauge.js for Gauge Meter -->
     <script src="https://cdn.jsdelivr.net/npm/gaugeJS@1.3.7/dist/gauge.min.js"></script>
-
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
 
+        /* Background Image */
         body {
             font-family: 'Inter', sans-serif;
             margin: 0;
             padding: 0;
-            background: linear-gradient(to bottom, #ffffff, #f4f7fc);
+            background: url('https://source.unsplash.com/1600x900/?technology,abstract') no-repeat center center fixed;
+            background-size: cover;
             color: #333;
             text-align: center;
         }
 
         /* Header */
         header {
-            background: #ffffff;
+            background: rgba(255, 255, 255, 0.9);
             padding: 20px;
-            font-size: 26px;
+            font-size: 24px;
             font-weight: bold;
             color: #2C3E50;
             box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
@@ -42,32 +48,28 @@
 
         /* Value Box */
         .value-box {
-            background: #ffffff;
+            background: rgba(255, 255, 255, 0.9);
             padding: 20px;
             border-radius: 12px;
             font-size: 20px;
-            box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.08);
+            box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.1);
             transition: 0.3s;
         }
 
-        .value-box:hover {
-            transform: scale(1.05);
-        }
-
         .highlight {
-            font-size: 32px;
+            font-size: 34px;
             font-weight: bold;
             color: #3498DB;
         }
 
         /* Alert Box */
         .alert-box {
-            background: #ffffff;
+            background: rgba(255, 255, 255, 0.9);
             padding: 15px;
             border-radius: 10px;
             font-size: 20px;
             font-weight: bold;
-            box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.08);
+            box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.1);
         }
 
         /* Gauge Meter */
@@ -75,10 +77,10 @@
             width: 100%;
             max-width: 300px;
             margin: auto;
-            background: #ffffff;
+            background: rgba(255, 255, 255, 0.9);
             padding: 20px;
             border-radius: 12px;
-            box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.08);
+            box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.1);
         }
 
         /* Graph Container */
@@ -86,14 +88,14 @@
             width: 90%;
             margin: 20px auto;
             padding: 20px;
-            background: #ffffff;
+            background: rgba(255, 255, 255, 0.9);
             border-radius: 15px;
-            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.08);
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         /* Footer */
         footer {
-            background: #ffffff;
+            background: rgba(255, 255, 255, 0.9);
             padding: 15px;
             margin-top: 20px;
             font-size: 14px;
@@ -113,7 +115,7 @@
 <body>
 
     <!-- HEADER -->
-    <header>⚡ MonitorX - AI-Powered Strain Monitoring ⚡</header>
+    <header>⚡ MonitorX - Advanced Strain Monitoring Dashboard ⚡</header>
 
     <div class="dashboard">
 
@@ -145,7 +147,7 @@
 
     <script>
         const SUPABASE_URL = "https://ehjowtztlcjyfzgeuonc.supabase.co";
-        const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoam93dHp0bGNqeWZ6Z2V1b25jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA4NDcxMjMsImV4cCI6MjA1NjQyMzEyM30.-_diCFou0wXbaveD0E4wt_ketqecpcv6ONAmLpiczl0";
+        const SUPABASE_API_KEY = "YOUR_SUPABASE_API_KEY";
 
         let strainData = [];
         let timeLabels = [];
