@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strain Sensor Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        canvas { width: 100% !important; height: 400px !important; }
+    </style>
+</head>
+<body>
+
+    <h2>Real-Time Strain Sensor Data</h2>
+    <canvas id="strainChart"></canvas>
+
+    <script>
+        const SUPABASE_URL = "https://ehjowtztlcjyfzgeuonc.supabase.co";
+        const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoam93dHp0bGNqeWZ6Z2V1b25jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA4NDcxMjMsImV4cCI6MjA1NjQyMzEyM30.-_diCFou0wXbaveD0E4wt_ketqecpcv6ONAmLpiczl0";
+
+        let strainData = [];
+        let timeLabels = [];
+
+        async function fetchData() {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/strain_data?order=timestamp.desc`, {
+                headers: { "apikey": SUPABASE_API_KEY, "Authorization": `Bearer ${SUPABASE_API_KEY}` }
+            });
+
+            const data = await response.json();
+            strainData = data.map(d => d.strain).reverse();
+            timeLabels = data.map(d => new Date(d.timestamp).toLocaleTimeString()).reverse();
+
+            updateChart();
+        }
+
+        const ctx = document.getElementById('strainChart').getContext('2d');
+        const strainChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: timeLabels,
+                datasets: [{
+                    label: 'Strain Value',
+                    data: strainData,
+                    borderColor: 'blue',
+                    borderWidth: 2,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { display: true, title: { display: true, text: 'Time' } },
+                    y: { display: true, title: { display: true, text: 'Strain Level' } }
+                }
+            }
+        });
+
+        function updateChart() {
+            strainChart.data.labels = timeLabels;
+            strainChart.data.datasets[0].data = strainData;
+            strainChart.update();
+        }
+
+        setInterval(fetchData, 2000);  // Update chart every 2 seconds
+    </script>
+
+</body>
+</html>
