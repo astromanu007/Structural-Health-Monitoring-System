@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>MonitorX - Structural Dashboard</title>
-  
+
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -126,38 +126,38 @@
     let timeLabels = [];
 
     async function fetchLatestData() {
-  try {
-    const url = ${SUPABASE_URL}/rest/v1/dht_data?order=timestamp.desc&limit=10;
-    console.log("Fetching from:", url);
+      const url = ${SUPABASE_URL}/rest/v1/dht_data?order=timestamp.desc&limit=10;
+      console.log("Fetching from:", url);
 
-    const response = await fetch(url, {
-      headers: {
-        "apikey": SUPABASE_API_KEY,
-        "Authorization": Bearer ${SUPABASE_API_KEY}
+      try {
+        const response = await fetch(url, {
+          headers: {
+            "apikey": SUPABASE_API_KEY,
+            "Authorization": Bearer ${SUPABASE_API_KEY}
+          }
+        });
+
+        console.log("Status:", response.status);
+        const data = await response.json();
+        console.log("Received data:", data);
+
+        if (!Array.isArray(data) || data.length === 0) return;
+
+        const latest = data[data.length - 1];
+        document.getElementById("strain").innerText = latest.strain;
+        document.getElementById("temp").innerText = latest.temperature.toFixed(1);
+        document.getElementById("hum").innerText = latest.humidity.toFixed(1);
+
+        updateAlert(latest.strain);
+
+        strainHistory = data.map(d => d.strain).reverse();
+        timeLabels = data.map(d => new Date(d.timestamp).toLocaleTimeString()).reverse();
+        updateChart();
+      } catch (err) {
+        console.error("Fetch failed:", err);
       }
-    });
+    }
 
-    console.log("Status:", response.status);
-    const data = await response.json();
-    console.log("Received data:", data);
-
-    const latest = data[data.length - 1];
-    if (!latest) return;
-
-    document.getElementById("strain").innerText = latest.strain;
-    document.getElementById("temp").innerText = latest.temperature.toFixed(1);
-    document.getElementById("hum").innerText = latest.humidity.toFixed(1);
-
-    updateAlert(latest.strain);
-
-    strainHistory = data.map(d => d.strain).reverse();
-    timeLabels = data.map(d => new Date(d.timestamp).toLocaleTimeString()).reverse();
-    updateChart();
-
-  } catch (err) {
-    console.error("Fetch failed:", err);
-  }
-}
     function updateAlert(value) {
       const box = document.getElementById("alertBox");
       if (value < 180) {
@@ -203,7 +203,7 @@
       chart.update();
     }
 
-    // Auto-refresh
+    // Start fetching
     fetchLatestData();
     setInterval(fetchLatestData, 2000);
   </script>
