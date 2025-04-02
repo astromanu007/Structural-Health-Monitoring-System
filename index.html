@@ -14,7 +14,6 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
 
-        /* Global Styling Main */
         body {
             font-family: 'Montserrat', sans-serif;
             margin: 0;
@@ -24,7 +23,6 @@
             text-align: center;
         }
 
-        /* Header */
         header {
             background: linear-gradient(135deg, #ff758c, #ff7eb3);
             padding: 15px;
@@ -35,7 +33,6 @@
             box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.2);
         }
 
-        /* Dashboard Layout */
         .dashboard {
             display: flex;
             flex-wrap: wrap;
@@ -47,7 +44,6 @@
             margin: auto;
         }
 
-        /* Value & Alert Boxes */
         .box {
             background: rgba(255, 255, 255, 0.9);
             padding: 20px;
@@ -70,7 +66,6 @@
             color: #3498DB;
         }
 
-        /* Alert Box with Dynamic Colors */
         .alert-box {
             font-weight: bold;
             text-transform: uppercase;
@@ -80,7 +75,6 @@
             min-width: 260px;
         }
 
-        /* Graph & Gauge Containers */
         .graph-container {
             width: 90%;
             margin: 20px auto;
@@ -90,7 +84,6 @@
             box-shadow: 0px 5px 12px rgba(0, 0, 0, 0.2);
         }
 
-        /* Footer */
         footer {
             background: rgba(255, 255, 255, 0.95);
             padding: 10px;
@@ -102,7 +95,6 @@
             box-shadow: 0px -3px 10px rgba(0, 0, 0, 0.1);
         }
 
-        /* Responsive Design */
         @media (max-width: 768px) {
             .dashboard {
                 flex-direction: column;
@@ -131,6 +123,18 @@
             <span class="highlight" id="strainValue">Loading...</span></p>
         </div>
 
+        <!-- Temperature Value Box -->
+        <div class="box">
+            <p>🌡 <strong>Temperature:</strong><br>
+            <span class="highlight" id="temperatureValue">Loading...</span> °C</p>
+        </div>
+
+        <!-- Humidity Value Box -->
+        <div class="box">
+            <p>💧 <strong>Humidity:</strong><br>
+            <span class="highlight" id="humidityValue">Loading...</span> %</p>
+        </div>
+
         <!-- Alert Box -->
         <div class="box alert-box" id="alertBox">
             ⚠ Status: <span id="alertText">Loading...</span>
@@ -153,34 +157,40 @@
 
     <script>
         const SUPABASE_URL = "https://pttsmubziutvyitbzwze.supabase.co/rest/v1/dht_data";
-        const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dHNtdWJ6aXV0dnlpdGJ6d3plIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1Mjc3MDgsImV4cCI6MjA1OTEwMzcwOH0.vQuN_8pLqMtbniztP12SFERlFqCKfbgmVY0fyQP-6lk"; // Replace with your actual API key
+        const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dHNtdWJ6aXV0dnlpdGJ6d3plIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1Mjc3MDgsImV4cCI6MjA1OTEwMzcwOH0.vQuN_8pLqMtbniztP12SFERlFqCKfbgmVY0fyQP-6lk";
 
         let strainData = [];
         let timeLabels = [];
 
         async function fetchData() {
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/strain_data?order=timestamp.desc&limit=10`, {
+            const response = await fetch(${SUPABASE_URL}?order=timestamp.desc&limit=10, {
                 headers: { 
                     "apikey": SUPABASE_API_KEY, 
-                    "Authorization": `Bearer ${SUPABASE_API_KEY}` 
+                    "Authorization": Bearer ${SUPABASE_API_KEY} 
                 }
             });
 
             const data = await response.json();
+
             strainData = data.map(d => d.strain).reverse();
             timeLabels = data.map(d => new Date(d.timestamp).toLocaleTimeString()).reverse();
 
-            if (strainData.length > 0) {
-                let latestValue = strainData[strainData.length - 1];
-                document.getElementById('strainValue').innerText = latestValue;
-                updateGauge(latestValue);
-                updateAlert(latestValue);
+            if (data.length > 0) {
+                const latest = data[data.length - 1];
+
+                // Update UI with latest values
+                document.getElementById('strainValue').innerText = latest.strain;
+                document.getElementById('temperatureValue').innerText = latest.temperature.toFixed(1);
+                document.getElementById('humidityValue').innerText = latest.humidity.toFixed(1);
+
+                updateGauge(latest.strain);
+                updateAlert(latest.strain);
             }
 
             updateChart();
         }
 
-        // Gauge Meter Configuration
+        // Gauge Meter Setup
         var opts = {
             angle: 0.1,
             lineWidth: 0.3,
@@ -222,7 +232,19 @@
         }
 
         var ctx = document.getElementById('strainChart').getContext('2d');
-        var strainChart = new Chart(ctx, { type: 'line', data: { labels: [], datasets: [{ label: "Strain Levels", data: [], borderColor: "#FF6384", fill: false }] }, options: { responsive: true } });
+        var strainChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: "Strain Levels",
+                    data: [],
+                    borderColor: "#FF6384",
+                    fill: false
+                }]
+            },
+            options: { responsive: true }
+        });
 
         function updateChart() {
             strainChart.data.labels = timeLabels;
@@ -230,6 +252,7 @@
             strainChart.update();
         }
 
+        // Start Fetching
         setInterval(fetchData, 2000);
     </script>
 
