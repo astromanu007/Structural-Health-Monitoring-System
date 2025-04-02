@@ -126,35 +126,38 @@
     let timeLabels = [];
 
     async function fetchLatestData() {
-      try {
-        const response = await fetch(${SUPABASE_URL}/rest/v1/dht_data?order=timestamp.desc&limit=10, {
-          headers: {
-            "apikey": SUPABASE_API_KEY,
-            "Authorization": Bearer ${SUPABASE_API_KEY}
-          }
-        });
+  try {
+    const url = ${SUPABASE_URL}/rest/v1/dht_data?order=timestamp.desc&limit=10;
+    console.log("Fetching from:", url);
 
-        const data = await response.json();
-        const latest = data[data.length - 1];
-
-        if (!latest) return;
-
-        // Update UI
-        document.getElementById("strain").innerText = latest.strain;
-        document.getElementById("temp").innerText = latest.temperature.toFixed(1);
-        document.getElementById("hum").innerText = latest.humidity.toFixed(1);
-
-        updateAlert(latest.strain);
-
-        // Update Chart
-        strainHistory = data.map(d => d.strain).reverse();
-        timeLabels = data.map(d => new Date(d.timestamp).toLocaleTimeString()).reverse();
-        updateChart();
-      } catch (err) {
-        console.error("Fetch error:", err);
+    const response = await fetch(url, {
+      headers: {
+        "apikey": SUPABASE_API_KEY,
+        "Authorization": Bearer ${SUPABASE_API_KEY}
       }
-    }
+    });
 
+    console.log("Status:", response.status);
+    const data = await response.json();
+    console.log("Received data:", data);
+
+    const latest = data[data.length - 1];
+    if (!latest) return;
+
+    document.getElementById("strain").innerText = latest.strain;
+    document.getElementById("temp").innerText = latest.temperature.toFixed(1);
+    document.getElementById("hum").innerText = latest.humidity.toFixed(1);
+
+    updateAlert(latest.strain);
+
+    strainHistory = data.map(d => d.strain).reverse();
+    timeLabels = data.map(d => new Date(d.timestamp).toLocaleTimeString()).reverse();
+    updateChart();
+
+  } catch (err) {
+    console.error("Fetch failed:", err);
+  }
+}
     function updateAlert(value) {
       const box = document.getElementById("alertBox");
       if (value < 180) {
