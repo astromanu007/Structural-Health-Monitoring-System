@@ -3,114 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Structural Health Monitoring</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>MonitorX - Advanced Strain Monitoring</title>
+    
+    <!-- Chart.js for Graph -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Gauge.js for Gauge Meter -->
+    <script src="https://cdn.jsdelivr.net/npm/gaugeJS@1.3.7/dist/gauge.min.js"></script>
+
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+        
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Montserrat', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: #fff;
             text-align: center;
-            background-color: #f4f4f4;
         }
-        h1 {
-            color: #333;
-        }
-        .status-box {
-            display: inline-block;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px;
+
+        header {
+            background: linear-gradient(135deg, #ff758c, #ff7eb3);
+            padding: 20px;
+            font-size: 26px;
             font-weight: bold;
+            color: white;
         }
-        .safe { background-color: green; color: white; }
-        .caution { background-color: orange; color: white; }
-        .danger { background-color: red; color: white; }
+
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            padding: 30px;
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        .box {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 25px;
+            border-radius: 15px;
+            font-size: 22px;
+            font-weight: bold;
+            color: #2C3E50;
+            min-width: 280px;
+        }
+
+        .highlight {
+            font-size: 36px;
+            font-weight: bold;
+            color: #3498DB;
+        }
+
+        .alert-box {
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .graph-container {
+            width: 90%;
+            margin: 20px auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+        }
     </style>
 </head>
 <body>
-    <h1>Structural Health Monitoring</h1>
 
-    <div id="alertBox" class="status-box caution">Fetching Data...</div>
-    <table border="1" cellpadding="10" cellspacing="0" width="50%" style="margin: auto;">
-        <thead>
-            <tr>
-                <th>Timestamp</th>
-                <th>Temperature (°C)</th>
-                <th>Humidity (%)</th>
-            </tr>
-        </thead>
-        <tbody id="dataTable"></tbody>
-    </table>
+    <header>🚀 MonitorX - The Future of Strain Monitoring 🚀</header>
+
+    <div class="dashboard">
+        <div class="box">🔍 <strong>Strain Value:</strong> <span class="highlight" id="strainValue">Loading...</span></div>
+        <div class="box">🌡 <strong>Temperature:</strong> <span class="highlight" id="temperatureValue">Loading...</span></div>
+        <div class="box">💧 <strong>Humidity:</strong> <span class="highlight" id="humidityValue">Loading...</span></div>
+        <div class="box alert-box" id="alertBox">⚠ Status: <span id="alertText">Loading...</span></div>
+        <div class="box"><canvas id="strainGauge"></canvas></div>
+    </div>
+
+    <div class="graph-container">
+        <canvas id="sensorChart"></canvas>
+    </div>
 
     <script>
-        // ✅ Initialize Supabase
-        const supabaseUrl = "https://pttsmubziutvyitbzwze.supabase.co";
-        const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dHNtdWJ6aXV0dnlpdGJ6d3plIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1Mjc3MDgsImV4cCI6MjA1OTEwMzcwOH0.vQuN_8pLqMtbniztP12SFERlFqCKfbgmVY0fyQP-6lk";  // Replace with your Supabase Key
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        const SUPABASE_URL = "https://pttsmubziutvyitbzwze.supabase.co";
+        const SUPABASE_API_KEY = "YOUR_SUPABASE_API_KEY";  // Replace with your actual key
 
-        console.log("Supabase initialized successfully!");
+        let strainData = [], tempData = [], humidityData = [], timeLabels = [];
 
         async function fetchData() {
-            console.log("Fetching data...");
-
-            // ✅ Query the correct table: 'dht_data'
-            const { data, error } = await supabase
-                .from("dht_data")  // ✅ Correct table name
-                .select("*")
-                .order("timestamp", { ascending: false })
-                .limit(10);
-
-            // 🔴 Handle errors
-            if (error) {
-                console.error("Error fetching data:", error);
-                document.getElementById("alertBox").innerText = "Error fetching data!";
-                document.getElementById("alertBox").className = "status-box danger";
-                return;
-            }
-
-            // 🔴 Check if data is an array
-            if (!Array.isArray(data) || data.length === 0) {
-                console.warn("No data available.");
-                document.getElementById("alertBox").innerText = "No Data Available!";
-                document.getElementById("alertBox").className = "status-box caution";
-                return;
-            }
-
-            console.log("Fetched data:", data);
-
-            // ✅ Update UI
-            updateUI(data);
-        }
-
-        function updateUI(data) {
-            const tableBody = document.getElementById("dataTable");
-            tableBody.innerHTML = "";
-
-            data.forEach(entry => {
-                const row = `<tr>
-                    <td>${new Date(entry.timestamp).toLocaleString()}</td>
-                    <td>${entry.temperature}°C</td>
-                    <td>${entry.humidity}%</td>
-                </tr>`;
-                tableBody.innerHTML += row;
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/sensor_data?order=timestamp.desc&limit=10`, {
+                headers: { 
+                    "apikey": SUPABASE_API_KEY, 
+                    "Authorization": `Bearer ${SUPABASE_API_KEY}`
+                }
             });
+            const data = await response.json();
+            strainData = data.map(d => d.strain).reverse();
+            tempData = data.map(d => d.temperature).reverse();
+            humidityData = data.map(d => d.humidity).reverse();
+            timeLabels = data.map(d => new Date(d.timestamp).toLocaleTimeString()).reverse();
 
-            // ✅ Update Alert Box based on latest values
-            const latestEntry = data[0];
-            if (latestEntry.temperature > 50 || latestEntry.humidity > 90) {
-                document.getElementById("alertBox").innerText = "DANGER: High Temperature or Humidity!";
-                document.getElementById("alertBox").className = "status-box danger";
-            } else if (latestEntry.temperature > 40 || latestEntry.humidity > 80) {
-                document.getElementById("alertBox").innerText = "Caution: Monitor Conditions!";
-                document.getElementById("alertBox").className = "status-box caution";
-            } else {
-                document.getElementById("alertBox").innerText = "System is Stable!";
-                document.getElementById("alertBox").className = "status-box safe";
+            if (strainData.length > 0) {
+                let latestStrain = strainData[strainData.length - 1];
+                let latestTemp = tempData[tempData.length - 1];
+                let latestHumidity = humidityData[humidityData.length - 1];
+                document.getElementById('strainValue').innerText = latestStrain;
+                document.getElementById('temperatureValue').innerText = latestTemp + '°C';
+                document.getElementById('humidityValue').innerText = latestHumidity + '%';
+                updateGauge(latestStrain);
+                updateAlert(latestStrain);
             }
+            updateChart();
         }
 
-        // ✅ Auto-refresh data every 5 seconds
-        setInterval(fetchData, 5000);
-        fetchData();
+        var opts = { angle: 0.1, lineWidth: 0.3, radiusScale: 1 };
+        var gauge = new Gauge(document.getElementById('strainGauge')).setOptions(opts);
+        gauge.maxValue = 500; gauge.setMinValue(0); gauge.animationSpeed = 32; gauge.set(0);
+
+        function updateGauge(value) { gauge.set(value); }
+        function updateAlert(value) {
+            const alertBox = document.getElementById('alertBox');
+            const alertText = document.getElementById('alertText');
+            if (value < 180) { alertBox.style.background = "#FF4B4B"; alertText.innerText = "🚨 DANGER!"; }
+            else if (value <= 300) { alertBox.style.background = "#FFA500"; alertText.innerText = "⚠ CAUTION!"; }
+            else { alertBox.style.background = "#32CD32"; alertText.innerText = "✅ SAFE"; }
+        }
+
+        var ctx = document.getElementById('sensorChart').getContext('2d');
+        var sensorChart = new Chart(ctx, { 
+            type: 'line', 
+            data: { 
+                labels: [],
+                datasets: [
+                    { label: "Strain", data: [], borderColor: "#FF6384", fill: false },
+                    { label: "Temperature", data: [], borderColor: "#36A2EB", fill: false },
+                    { label: "Humidity", data: [], borderColor: "#FFCE56", fill: false }
+                ]
+            }, 
+            options: { responsive: true }
+        });
+
+        function updateChart() {
+            sensorChart.data.labels = timeLabels;
+            sensorChart.data.datasets[0].data = strainData;
+            sensorChart.data.datasets[1].data = tempData;
+            sensorChart.data.datasets[2].data = humidityData;
+            sensorChart.update();
+        }
+
+        setInterval(fetchData, 2000);
     </script>
 </body>
 </html>
