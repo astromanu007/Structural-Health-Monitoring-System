@@ -3,131 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Structural Health Monitoring</title>
+    <title>MonitorX - Advanced Strain Monitoring</title>
     
-    <!-- Correct way to load Supabase -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- Chart.js for Graph -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Gauge.js for Gauge Meter -->
+    <script src="https://cdn.jsdelivr.net/npm/gaugeJS@1.3.7/dist/gauge.min.js"></script>
 
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+        
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Montserrat', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: #fff;
             text-align: center;
-            background-color: #f4f4f4;
         }
-        .container {
-            max-width: 500px;
-            margin: 50px auto;
+
+        header {
+            background: linear-gradient(135deg, #ff758c, #ff7eb3);
             padding: 20px;
-            background: white;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
-        }
-        h1 { color: #333; }
-        .status-box {
-            font-size: 24px;
+            font-size: 26px;
             font-weight: bold;
-            padding: 20px;
-            margin-top: 20px;
-            border-radius: 10px;
-        }
-        #alertBox { color: white; }
-        .safe { background: #32CD32; }
-        .caution { background: #FFA500; }
-        .danger { background: #FF4B4B; }
-        button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            border: none;
-            border-radius: 5px;
-            background: #007BFF;
             color: white;
         }
-        button:hover { background: #0056b3; }
+
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            padding: 30px;
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        .box {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 25px;
+            border-radius: 15px;
+            font-size: 22px;
+            font-weight: bold;
+            color: #2C3E50;
+            min-width: 280px;
+        }
+
+        .highlight {
+            font-size: 36px;
+            font-weight: bold;
+            color: #3498DB;
+        }
+
+        .alert-box {
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .graph-container {
+            width: 90%;
+            margin: 20px auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Structural Health Monitoring</h1>
-        <p>Live strain data from the building sensors.</p>
-        <div id="alertBox" class="status-box">Loading...</div>
-        <button onclick="fetchData()">Refresh Data</button>
+
+    <header>🚀 MonitorX - The Future of Strain Monitoring 🚀</header>
+
+    <div class="dashboard">
+        <div class="box">🔍 <strong>Strain Value:</strong> <span class="highlight" id="strainValue">Loading...</span></div>
+        <div class="box">🌡 <strong>Temperature:</strong> <span class="highlight" id="temperatureValue">Loading...</span></div>
+        <div class="box">💧 <strong>Humidity:</strong> <span class="highlight" id="humidityValue">Loading...</span></div>
+        <div class="box alert-box" id="alertBox">⚠ Status: <span id="alertText">Loading...</span></div>
+        <div class="box"><canvas id="strainGauge"></canvas></div>
+    </div>
+
+    <div class="graph-container">
+        <canvas id="sensorChart"></canvas>
     </div>
 
     <script>
-        window.onload = async function() {
-            console.log("Initializing Supabase...");
+        const SUPABASE_URL = "https://pttsmubziutvyitbzwze.supabase.co";
+        const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dHNtdWJ6aXV0dnlpdGJ6d3plIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1Mjc3MDgsImV4cCI6MjA1OTEwMzcwOH0.vQuN_8pLqMtbniztP12SFERlFqCKfbgmVY0fyQP-6lk";
 
-            const SUPABASE_URL = "https://your-supabase-url.supabase.co";
-            const SUPABASE_API_KEY = "your-anon-api-key";
-
-            // Ensure Supabase is available before using it
-            if (typeof supabase === "undefined") {
-                console.error("Supabase library failed to load!");
-                return;
-            }
-
-            // Initialize Supabase
-            window.supabaseInstance = supabase.createClient(SUPABASE_URL, SUPABASE_API_KEY);
-            console.log("Supabase initialized successfully!");
-
-            // Fetch data on page load
-            await fetchData();
-        };
+        let strainData = [], tempData = [], humidityData = [], timeLabels = [];
 
         async function fetchData() {
-            console.log("Fetching data...");
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/sensor_data?order=timestamp.desc&limit=10`, {
+                headers: { 
+                    "apikey": SUPABASE_API_KEY, 
+                    "Authorization": `Bearer ${SUPABASE_API_KEY}`
+                }
+            });
+            const data = await response.json();
+            strainData = data.map(d => d.strain).reverse();
+            tempData = data.map(d => d.temperature).reverse();
+            humidityData = data.map(d => d.humidity).reverse();
+            timeLabels = data.map(d => new Date(d.timestamp).toLocaleTimeString()).reverse();
 
-            const supabase = window.supabaseInstance;
-            if (!supabase) {
-                console.error("Supabase not initialized!");
-                return;
+            if (strainData.length > 0) {
+                let latestStrain = strainData[strainData.length - 1];
+                let latestTemp = tempData[tempData.length - 1];
+                let latestHumidity = humidityData[humidityData.length - 1];
+                document.getElementById('strainValue').innerText = latestStrain;
+                document.getElementById('temperatureValue').innerText = latestTemp + '°C';
+                document.getElementById('humidityValue').innerText = latestHumidity + '%';
+                updateGauge(latestStrain);
+                updateAlert(latestStrain);
             }
-
-            const { data, error } = await supabase
-                .from('sensor_data')
-                .select('*')
-                .order('timestamp', { ascending: false })
-                .limit(1);
-
-            if (error) {
-                console.error("Error fetching data:", error);
-                document.getElementById("alertBox").innerText = "Error fetching data!";
-                document.getElementById("alertBox").className = "status-box danger";
-                return;
-            }
-
-            if (data.length === 0) {
-                console.warn("No data received.");
-                document.getElementById("alertBox").innerText = "No data available!";
-                document.getElementById("alertBox").className = "status-box caution";
-                return;
-            }
-
-            const latestValue = data[0].strain_value;  // Adjust column name if needed
-            updateAlert(latestValue);
+            updateChart();
         }
 
+        var opts = { angle: 0.1, lineWidth: 0.3, radiusScale: 1 };
+        var gauge = new Gauge(document.getElementById('strainGauge')).setOptions(opts);
+        gauge.maxValue = 500; gauge.setMinValue(0); gauge.animationSpeed = 32; gauge.set(0);
+
+        function updateGauge(value) { gauge.set(value); }
         function updateAlert(value) {
-            const alertBox = document.getElementById("alertBox");
-
-            if (!alertBox) {
-                console.error("Alert box element is missing!");
-                return;
-            }
-
-            if (value < 180) {
-                alertBox.innerText = "🚨 DANGER!";
-                alertBox.className = "status-box danger";
-            } else if (value <= 300) {
-                alertBox.innerText = "⚠ CAUTION!";
-                alertBox.className = "status-box caution";
-            } else {
-                alertBox.innerText = "✅ SAFE";
-                alertBox.className = "status-box safe";
-            }
+            const alertBox = document.getElementById('alertBox');
+            const alertText = document.getElementById('alertText');
+            if (value < 180) { alertBox.style.background = "#FF4B4B"; alertText.innerText = "🚨 DANGER!"; }
+            else if (value <= 300) { alertBox.style.background = "#FFA500"; alertText.innerText = "⚠ CAUTION!"; }
+            else { alertBox.style.background = "#32CD32"; alertText.innerText = "✅ SAFE"; }
         }
+
+        var ctx = document.getElementById('sensorChart').getContext('2d');
+        var sensorChart = new Chart(ctx, { 
+            type: 'line', 
+            data: { 
+                labels: [],
+                datasets: [
+                    { label: "Strain", data: [], borderColor: "#FF6384", fill: false },
+                    { label: "Temperature", data: [], borderColor: "#36A2EB", fill: false },
+                    { label: "Humidity", data: [], borderColor: "#FFCE56", fill: false }
+                ]
+            }, 
+            options: { responsive: true }
+        });
+
+        function updateChart() {
+            sensorChart.data.labels = timeLabels;
+            sensorChart.data.datasets[0].data = strainData;
+            sensorChart.data.datasets[1].data = tempData;
+            sensorChart.data.datasets[2].data = humidityData;
+            sensorChart.update();
+        }
+
+        setInterval(fetchData, 2000);
     </script>
 </body>
 </html>
