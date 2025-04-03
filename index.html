@@ -94,7 +94,7 @@
         let strainData = [], tempData = [], humidityData = [], timeLabels = [];
 
         async function fetchData() {
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/sensor_data?order=timestamp.desc&limit=10`, {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/dht_data?order=timestamp.desc&limit=10`, {
                 headers: { 
                     "apikey": SUPABASE_API_KEY, 
                     "Authorization": `Bearer ${SUPABASE_API_KEY}`
