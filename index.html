@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Structural Health Monitoring</title>
-    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script> <!-- Load Supabase correctly -->
+    
+    <!-- Correct way to load Supabase -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -19,9 +22,7 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             border-radius: 10px;
         }
-        h1 {
-            color: #333;
-        }
+        h1 { color: #333; }
         .status-box {
             font-size: 24px;
             font-weight: bold;
@@ -29,9 +30,7 @@
             margin-top: 20px;
             border-radius: 10px;
         }
-        #alertBox {
-            color: white;
-        }
+        #alertBox { color: white; }
         .safe { background: #32CD32; }
         .caution { background: #FFA500; }
         .danger { background: #FF4B4B; }
@@ -45,9 +44,7 @@
             background: #007BFF;
             color: white;
         }
-        button:hover {
-            background: #0056b3;
-        }
+        button:hover { background: #0056b3; }
     </style>
 </head>
 <body>
@@ -59,23 +56,25 @@
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", async function() {
+        window.onload = async function() {
             console.log("Initializing Supabase...");
 
-            const SUPABASE_URL = "https://pttsmubziutvyitbzwze.supabase.co";
-            const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dHNtdWJ6aXV0dnlpdGJ6d3plIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM1Mjc3MDgsImV4cCI6MjA1OTEwMzcwOH0.vQuN_8pLqMtbniztP12SFERlFqCKfbgmVY0fyQP-6lk";
+            const SUPABASE_URL = "https://your-supabase-url.supabase.co";
+            const SUPABASE_API_KEY = "your-anon-api-key";
 
-            // Ensure Supabase is correctly loaded
-            if (window.supabase) {
-                const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_API_KEY);
-                console.log("Supabase initialized successfully!");
-                window.supabaseInstance = supabase; // Store globally
-            } else {
+            // Ensure Supabase is available before using it
+            if (typeof supabase === "undefined") {
                 console.error("Supabase library failed to load!");
+                return;
             }
 
-            await fetchData(); // Fetch data on load
-        });
+            // Initialize Supabase
+            window.supabaseInstance = supabase.createClient(SUPABASE_URL, SUPABASE_API_KEY);
+            console.log("Supabase initialized successfully!");
+
+            // Fetch data on page load
+            await fetchData();
+        };
 
         async function fetchData() {
             console.log("Fetching data...");
