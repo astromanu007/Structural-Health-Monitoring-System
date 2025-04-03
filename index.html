@@ -13,8 +13,7 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
-
-        /* Background Styling */
+        
         body {
             font-family: 'Montserrat', sans-serif;
             margin: 0;
@@ -24,18 +23,14 @@
             text-align: center;
         }
 
-        /* Header */
         header {
             background: linear-gradient(135deg, #ff758c, #ff7eb3);
             padding: 20px;
             font-size: 26px;
             font-weight: bold;
             color: white;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-            box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.2);
         }
 
-        /* Dashboard Layout */
         .dashboard {
             display: flex;
             flex-wrap: wrap;
@@ -46,7 +41,6 @@
             margin: auto;
         }
 
-        /* Value & Alert Boxes */
         .box {
             background: rgba(255, 255, 255, 0.9);
             padding: 25px;
@@ -54,13 +48,7 @@
             font-size: 22px;
             font-weight: bold;
             color: #2C3E50;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s ease-in-out;
             min-width: 280px;
-        }
-
-        .box:hover {
-            transform: scale(1.05);
         }
 
         .highlight {
@@ -69,159 +57,104 @@
             color: #3498DB;
         }
 
-        /* Alert Box with Dynamic Colors */
         .alert-box {
             font-weight: bold;
             text-transform: uppercase;
-            transition: 0.3s ease-in-out;
         }
 
-        /* Graph & Gauge Containers */
         .graph-container {
             width: 90%;
             margin: 20px auto;
             padding: 20px;
             background: rgba(255, 255, 255, 0.9);
             border-radius: 15px;
-            box-shadow: 0px 5px 12px rgba(0, 0, 0, 0.2);
         }
-
-        /* Footer */
-        footer {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 15px;
-            margin-top: 20px;
-            font-size: 14px;
-            font-weight: bold;
-            color: #2C3E50;
-            border-top: 3px solid #D3DCE6;
-            box-shadow: 0px -3px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .dashboard {
-                flex-direction: column;
-                align-items: center;
-            }
-        }
-
     </style>
 </head>
 <body>
 
-    <!-- HEADER -->
     <header>🚀 MonitorX - The Future of Strain Monitoring 🚀</header>
 
     <div class="dashboard">
-
-        <!-- Strain Value Box -->
-        <div class="box">
-            <p>🔍 <strong>Latest Strain Value:</strong> <br>
-            <span class="highlight" id="strainValue">Loading...</span></p>
-        </div>
-
-        <!-- Alert Box -->
-        <div class="box alert-box" id="alertBox">
-            ⚠ Status: <span id="alertText">Loading...</span>
-        </div>
-
-        <!-- Gauge Meter -->
-        <div class="box">
-            <canvas id="strainGauge"></canvas>
-        </div>
-
+        <div class="box">🔍 <strong>Strain Value:</strong> <span class="highlight" id="strainValue">Loading...</span></div>
+        <div class="box">🌡 <strong>Temperature:</strong> <span class="highlight" id="temperatureValue">Loading...</span></div>
+        <div class="box">💧 <strong>Humidity:</strong> <span class="highlight" id="humidityValue">Loading...</span></div>
+        <div class="box alert-box" id="alertBox">⚠ Status: <span id="alertText">Loading...</span></div>
+        <div class="box"><canvas id="strainGauge"></canvas></div>
     </div>
 
-    <!-- Graph Container -->
     <div class="graph-container">
-        <canvas id="strainChart"></canvas>
+        <canvas id="sensorChart"></canvas>
     </div>
-
-    <!-- FOOTER -->
-    <footer>© 2025 MonitorX - Advanced AI-Based Health & Safety Monitoring ⚡</footer>
 
     <script>
         const SUPABASE_URL = "https://ehjowtztlcjyfzgeuonc.supabase.co";
-        const SUPABASE_API_KEY = "YOUR_SUPABASE_API_KEY"; // Replace with your actual API key
+        const SUPABASE_API_KEY = "YOUR_SUPABASE_API_KEY";
 
-        let strainData = [];
-        let timeLabels = [];
+        let strainData = [], tempData = [], humidityData = [], timeLabels = [];
 
         async function fetchData() {
-            const response = await fetch(${SUPABASE_URL}/rest/v1/strain_data?order=timestamp.desc&limit=10, {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/sensor_data?order=timestamp.desc&limit=10`, {
                 headers: { 
                     "apikey": SUPABASE_API_KEY, 
-                    "Authorization": Bearer ${SUPABASE_API_KEY} 
+                    "Authorization": `Bearer ${SUPABASE_API_KEY}`
                 }
             });
-
             const data = await response.json();
             strainData = data.map(d => d.strain).reverse();
+            tempData = data.map(d => d.temperature).reverse();
+            humidityData = data.map(d => d.humidity).reverse();
             timeLabels = data.map(d => new Date(d.timestamp).toLocaleTimeString()).reverse();
 
             if (strainData.length > 0) {
-                let latestValue = strainData[strainData.length - 1];
-                document.getElementById('strainValue').innerText = latestValue;
-                updateGauge(latestValue);
-                updateAlert(latestValue);
+                let latestStrain = strainData[strainData.length - 1];
+                let latestTemp = tempData[tempData.length - 1];
+                let latestHumidity = humidityData[humidityData.length - 1];
+                document.getElementById('strainValue').innerText = latestStrain;
+                document.getElementById('temperatureValue').innerText = latestTemp + '°C';
+                document.getElementById('humidityValue').innerText = latestHumidity + '%';
+                updateGauge(latestStrain);
+                updateAlert(latestStrain);
             }
-
             updateChart();
         }
 
-        // Gauge Meter Configuration
-        var opts = {
-            angle: 0.1,
-            lineWidth: 0.3,
-            radiusScale: 1,
-            pointer: { length: 0.7, strokeWidth: 0.04 },
-            staticLabels: {
-                font: "12px Arial",
-                labels: [100, 200, 300, 400, 500],
-                color: "#555",
-                fractionDigits: 0
-            }
-        };
+        var opts = { angle: 0.1, lineWidth: 0.3, radiusScale: 1 };
+        var gauge = new Gauge(document.getElementById('strainGauge')).setOptions(opts);
+        gauge.maxValue = 500; gauge.setMinValue(0); gauge.animationSpeed = 32; gauge.set(0);
 
-        var target = document.getElementById('strainGauge');
-        var gauge = new Gauge(target).setOptions(opts);
-        gauge.maxValue = 500;
-        gauge.setMinValue(0);
-        gauge.animationSpeed = 32;
-        gauge.set(0);
-
-        function updateGauge(value) {
-            gauge.set(value);
-        }
-
+        function updateGauge(value) { gauge.set(value); }
         function updateAlert(value) {
             const alertBox = document.getElementById('alertBox');
             const alertText = document.getElementById('alertText');
-
-            if (value < 180) {
-                alertBox.style.background = "#FF4B4B";
-                alertText.innerText = "🚨 DANGER!";
-            } else if (value >= 180 && value <= 300) {
-                alertBox.style.background = "#FFA500";
-                alertText.innerText = "⚠ CAUTION!";
-            } else {
-                alertBox.style.background = "#32CD32";
-                alertText.innerText = "✅ SAFE";
-            }
+            if (value < 180) { alertBox.style.background = "#FF4B4B"; alertText.innerText = "🚨 DANGER!"; }
+            else if (value <= 300) { alertBox.style.background = "#FFA500"; alertText.innerText = "⚠ CAUTION!"; }
+            else { alertBox.style.background = "#32CD32"; alertText.innerText = "✅ SAFE"; }
         }
 
-        var ctx = document.getElementById('strainChart').getContext('2d');
-        var strainChart = new Chart(ctx, { type: 'line', data: { labels: [], datasets: [{ label: "Strain Levels", data: [], borderColor: "#FF6384", fill: false }] }, options: { responsive: true } });
+        var ctx = document.getElementById('sensorChart').getContext('2d');
+        var sensorChart = new Chart(ctx, { 
+            type: 'line', 
+            data: { 
+                labels: [],
+                datasets: [
+                    { label: "Strain", data: [], borderColor: "#FF6384", fill: false },
+                    { label: "Temperature", data: [], borderColor: "#36A2EB", fill: false },
+                    { label: "Humidity", data: [], borderColor: "#FFCE56", fill: false }
+                ]
+            }, 
+            options: { responsive: true }
+        });
 
         function updateChart() {
-            strainChart.data.labels = timeLabels;
-            strainChart.data.datasets[0].data = strainData;
-            strainChart.update();
+            sensorChart.data.labels = timeLabels;
+            sensorChart.data.datasets[0].data = strainData;
+            sensorChart.data.datasets[1].data = tempData;
+            sensorChart.data.datasets[2].data = humidityData;
+            sensorChart.update();
         }
 
         setInterval(fetchData, 2000);
     </script>
-
 </body>
 </html>
